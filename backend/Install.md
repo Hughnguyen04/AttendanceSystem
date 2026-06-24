@@ -41,8 +41,6 @@ OVERTIME_MONTHLY_LIMIT_MINS=2400  # 40 giờ = 2400 phút
 OVERTIME_YEARLY_LIMIT_MINS=12000  # 200 giờ = 12000 phút
 ```
 
-### **5. Khởi Tạo Database**
-
 ```bash
 # Chạy script init SQL
 mysql -u root -p < init.sql
@@ -50,6 +48,8 @@ mysql -u root -p < init.sql
 # Hoặc chạy từ Python
 python -c "from app.db.session import init_db; init_db()"
 ```
+
+### **5. Khởi Tạo Database**
 
 ### **6. Chạy Server**
 
