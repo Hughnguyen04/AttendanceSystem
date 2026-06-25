@@ -18,14 +18,32 @@ async function login() {
 
         const result = await res.json();
 
-        if (res.ok) {
-            localStorage.setItem("access_token", result.data.access_token);
-            localStorage.setItem("user", result.data.user);
+        if (res.ok && result?.data?.access_token) {
+            const token = result.data.access_token;
+            localStorage.setItem("access_token", token);
+
+            const profileRes = await fetch(API_URL + "/auth/me", {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!profileRes.ok) {
+                throw new Error("Không lấy được thông tin người dùng");
+            }
+
+            const profileResult = await profileRes.json();
+            const user = profileResult?.data;
+
+            if (user) {
+                localStorage.setItem("user", JSON.stringify(user));
+            }
 
             window.location.href = "./daily_reports.html";
         } else {
             document.getElementById("message").innerText =
-                result.detail || "Đăng nhập thất bại";
+                result.message || result.detail || "Đăng nhập thất bại";
         }
 
     } catch (e) {
