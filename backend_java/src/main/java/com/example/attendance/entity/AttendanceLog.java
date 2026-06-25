@@ -3,6 +3,8 @@ package com.example.attendance.entity;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,18 +19,23 @@ public class AttendanceLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonProperty("employee_id")
     @Column(nullable = false)
     private Long employeeId;
 
+    @JsonProperty("log_date")
     @Column(nullable = false)
     private LocalDate logDate;
 
+    @JsonProperty("shift_start")
     @Column(nullable = false)
     private LocalTime shiftStart;
 
+    @JsonProperty("shift_end")
     @Column(nullable = false)
     private LocalTime shiftEnd;
 
+    @JsonProperty("checked_time")
     @Column(nullable = false)
     private LocalTime checkedTime;
 
