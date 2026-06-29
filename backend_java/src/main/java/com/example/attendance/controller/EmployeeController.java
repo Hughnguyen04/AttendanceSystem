@@ -16,7 +16,7 @@ import com.example.attendance.repository.EmployeeRepository;
 import com.example.attendance.service.JwtService;
 
 @RestController
-@RequestMapping("/api/v1/employees")
+@RequestMapping("/employees")
 @CrossOrigin(origins = "*")
 public class EmployeeController {
     private final EmployeeRepository employeeRepository;
