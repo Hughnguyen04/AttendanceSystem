@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 extendedProps: { vacation_type: i.vacation_type.toUpperCase(), description: i.description, isCompensation: false }
             }));
             const c = (cRes.data || []).map(i => ({
-                id: 'comp_' + i.id, title: i.title, start: i.compensate_date,
+                id: 'comp_' + i.id, title: i.title, start: i.compensateDate || i.compensate_date,
                 extendedProps: { isCompensation: true }
             }));
             calendar.addEventSource([...v, ...c]);
