@@ -2,9 +2,14 @@ package com.example.attendance.dto;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class WorkCompensationRequest {
     private String title;
+
+    @JsonProperty("compensate_date")
     private LocalDate compensateDate;
+
     private String description;
 
     public String getTitle() {

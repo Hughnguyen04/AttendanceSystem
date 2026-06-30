@@ -23,6 +23,7 @@ async function checkAuthAndGetUser() {
 
         localStorage.setItem("user", JSON.stringify(result.data));
         updateHeaderUserInfo();
+        window.dispatchEvent(new CustomEvent('user:loaded', { detail: result.data }));
     } catch (err) {
         console.error("Auth Error:", err);
 

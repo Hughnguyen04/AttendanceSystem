@@ -1,7 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     checkAuthAndGetUser();
 
-    const userRole = JSON.parse(localStorage.getItem('user'))?.role;
+    function isAdminUser() {
+        return (JSON.parse(localStorage.getItem('user') || 'null')?.role || '').toLowerCase() === 'admin';
+    }
+
     const calendarEl = document.getElementById('calendar');
     const vModal = new bootstrap.Modal(document.getElementById('vacationModal'));
     const cModal = new bootstrap.Modal(document.getElementById('compensationModal'));
@@ -11,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'vi',
-        selectable: userRole === 'admin',
+        selectable: isAdminUser(),
         unselectAuto: false,
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
@@ -29,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         eventClick: function (info) {
-            if (userRole !== 'admin') return;
+            if (!isAdminUser()) return;
             const ev = info.event;
             if (ev.extendedProps.isCompensation) {
                 if (confirm(`Xóa ngày làm bù: ${ev.title}?`)) deleteCompensation(ev.id);
@@ -51,6 +54,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             return data;
         }
+    });
+
+    window.addEventListener('user:loaded', function () {
+        calendar.setOption('selectable', isAdminUser());
     });
 
     calendar.render();
@@ -84,7 +91,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('vacationId').value = event.id;
         document.getElementById('vacationTitle').value = event.title;
         document.getElementById('vacationDesc').value = props.description || '';
-        document.getElementById('vacationType').value = props.vacation_type === 'EVENT' ? 'COMPANY_EVENT' : props.vacation_type;
+        const vacationType = props.vacation_type || 'HOLIDAY';
+        document.getElementById('vacationType').value = (vacationType === 'EVENT' || vacationType === 'COMPANY_EVENT') ? 'COMPANY_EVENT' : vacationType;
         document.getElementById('btn-delete-vacation').classList.remove('d-none');
         vModal.show();
     }
@@ -113,12 +121,14 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btn-save-vacation').addEventListener('click', function () {
         const id = document.getElementById('vacationId').value;
         const type = document.getElementById('vacationType').value;
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
         const payload = {
             title: document.getElementById('vacationTitle').value || "Nghỉ lễ",
             description: document.getElementById('vacationDesc').value || "",
+            employee_id: Number(currentUser.id || 1),
             start_date: document.getElementById('startDate').value,
             end_date: document.getElementById('endDate').value,
-            vacation_type: type.toLowerCase() === 'company_event' ? 'event' : type.toLowerCase(),
+            vacation_type: type,
             is_paid: true,
             is_recurring: type === 'HOLIDAY'
         };
