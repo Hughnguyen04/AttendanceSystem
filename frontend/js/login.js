@@ -22,7 +22,7 @@ async function login() {
             const token = result.data.access_token;
             localStorage.setItem("access_token", token);
 
-            const profileRes = await fetch(API_URL + "/auth/me", {
+            const profileRes = await fetch(API_URL + "/employees/me", {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`

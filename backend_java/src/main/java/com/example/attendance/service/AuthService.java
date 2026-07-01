@@ -56,7 +56,20 @@ public class AuthService {
         data.put("full_name", employee.getFullName());
         data.put("email", employee.getEmail());
         data.put("role", employee.getRole());
-        data.put("department_id", null);
+        data.put("department_id", employee.getDepartmentId());
+        data.put("dob", employee.getDob());
+
+        if (employee.getShift() != null) {
+            Map<String, Object> shiftData = new HashMap<>();
+            shiftData.put("id", employee.getShift().getId());
+            shiftData.put("name", employee.getShift().getName());
+            shiftData.put("start_time", employee.getShift().getStartTime().toString());
+            shiftData.put("end_time", employee.getShift().getEndTime().toString());
+            data.put("shift", shiftData);
+        } else {
+            data.put("shift", null);
+        }
+
         return data;
     }
 }
