@@ -17,7 +17,7 @@ $(document).ready(function () {
     async function initReportsPage() {
         try {
             await checkAuthAndGetUser();
-            calculateDailyWorkLog()
+            await calculateDailyWorkLog();
 
             const month = $monthSelect.val();
             const year = $yearInput.val();
@@ -67,35 +67,35 @@ function fetchMyFixRequests(month, year) {
 }
 
 async function fetchAndRenderReports(month, year) {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
     const employeeId = user?.id ?? null;
 
     const tbody = document.getElementById('reports-tbody');
     if (!tbody) return;
 
     if (!employeeId) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state-cell" style="color: orange;">Không tìm thấy thông tin nhân viên trong bộ nhớ.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell" style="color: orange;">Không tìm thấy thông tin nhân viên trong bộ nhớ.</td></tr>`;
         return;
     }
 
     const apiUrl = `${API_URL}/attendance/daily-reports/${employeeId}?month=${month}&year=${year}`;
 
     try {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state-cell">Đang tải dữ liệu...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell">Đang tải dữ liệu...</td></tr>`;
 
-        const response = await fetch(apiUrl);
+        const response = await fetchWithAuth(apiUrl);
         const result = await response.json();
 
-        if (result.status === 1000 && result.data) {
+        if (response.ok && result.status === 1000 && Array.isArray(result.data)) {
             renderSummary(result.data);
             renderTable(result.data);
         } else {
-            renderSummary([]); // Reset thông số về 0
-            tbody.innerHTML = `<tr><td colspan="8" class="empty-state-cell">Không có dữ liệu cho thời gian này</td></tr>`;
+            renderSummary([]);
+            tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell">Không có dữ liệu cho thời gian này</td></tr>`;
         }
     } catch (error) {
         console.error('Error:', error);
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state-cell" style="color: red;">Không thể kết nối máy chủ: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell" style="color: red;">Không thể kết nối máy chủ: ${error.message}</td></tr>`;
     }
 }
 
@@ -272,15 +272,21 @@ function openFixModal(date, currentIn, currentOut) {
 }
 
 function calculateDailyWorkLog(targetDate) {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const employeeId = user?.id;
     const dateToCalculate = targetDate || new Date().toISOString().split('T')[0];
-    $.ajax({
-        url: `/attendance/logs/calculate?target_date=${dateToCalculate}`,
-        type: 'POST',
-        contentType: 'application/json',
-        error: function (xhr) {
-            const errorMsg = xhr.responseJSON ? xhr.responseJSON.detail || xhr.responseJSON.message : "Lỗi kết nối";
 
-            console.error(errorMsg);
+    if (!employeeId) {
+        return Promise.resolve();
+    }
+
+    return $.ajax({
+        url: `/attendance/calculate-daily-report/${employeeId}`,
+        type: 'POST',
+        data: { workDate: dateToCalculate },
+        error: function (xhr) {
+            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseJSON.detail : "Lỗi kết nối";
+            console.error("Không thể tính báo cáo ngày:", errorMsg);
         },
     });
 }

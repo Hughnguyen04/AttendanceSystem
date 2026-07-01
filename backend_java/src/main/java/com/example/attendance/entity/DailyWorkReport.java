@@ -28,9 +28,11 @@ public class DailyWorkReport {
     @Column(name = "work_date", nullable = false)
     private LocalDate workDate;
 
+    @JsonProperty("check_in")
     @Column(name = "check_in")
     private LocalTime checkIn;
 
+    @JsonProperty("check_out")
     @Column(name = "check_out")
     private LocalTime checkOut;
 

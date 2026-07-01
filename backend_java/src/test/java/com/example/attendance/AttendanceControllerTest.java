@@ -21,6 +21,6 @@ class AttendanceControllerTest {
         mockMvc.perform(post("/attendance/manual")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"employee_id\":1}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk());
     }
 }

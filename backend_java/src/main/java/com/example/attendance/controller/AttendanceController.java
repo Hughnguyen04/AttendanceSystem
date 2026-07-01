@@ -1,5 +1,6 @@
 package com.example.attendance.controller;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,25 @@ public class AttendanceController {
         response.put("status", 1000);
         response.put("data", logs);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/calculate-daily-report/{employeeId}")
+    public ResponseEntity<Map<String, Object>> calculateDailyReport(@PathVariable Long employeeId,
+                                                                     @RequestParam String workDate) {
+        try {
+            DailyWorkReport report = attendanceService.calculateDailyWorkReport(employeeId, LocalDate.parse(workDate));
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 1000);
+            response.put("message", "OK");
+            response.put("data", report);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 1001);
+            response.put("message", e.getMessage());
+            response.put("data", null);
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @GetMapping("/daily-reports/{employeeId}")
