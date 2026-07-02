@@ -76,9 +76,19 @@ public class AttendanceService {
         int shiftStartMinutes = toMinutes(firstLog.getShiftStart());
         int shiftEndMinutes = toMinutes(firstLog.getShiftEnd());
 
+        // Tính toán thời gian làm việc
         int inOfficeMinutes = Math.max(0, checkOutMinutes - checkInMinutes);
+        
+        // Tính toán đi muộn (nếu check_in > shift_start)
         int lateMinutes = Math.max(0, checkInMinutes - shiftStartMinutes);
+        
+        // Tính toán về sớm (nếu check_out < shift_end)
         int earlyMinutes = Math.max(0, shiftEndMinutes - checkOutMinutes);
+        
+        // Tính toán thiếu và OT dựa trên giờ làm thực tế
+        int expectedShiftMinutes = shiftEndMinutes - shiftStartMinutes;
+        int lackMinutes = Math.max(0, expectedShiftMinutes - inOfficeMinutes);
+        int overtimeMinutes = Math.max(0, inOfficeMinutes - expectedShiftMinutes);
 
         report.setEmployeeId(employeeId);
         report.setWorkDate(workDate);
@@ -88,8 +98,8 @@ public class AttendanceService {
         report.setWorkTimeMinutes(inOfficeMinutes);
         report.setLateArriveMinutes(lateMinutes);
         report.setLeaveEarlyMinutes(earlyMinutes);
-        report.setLackMinutes(0);
-        report.setOvertimeMinutes(0);
+        report.setLackMinutes(lackMinutes);
+        report.setOvertimeMinutes(overtimeMinutes);
 
         return dailyWorkReportRepository.save(report);
     }

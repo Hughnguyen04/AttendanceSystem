@@ -1,4 +1,5 @@
 let myFixRequests = [];
+let currentReportsData = [];  // Lưu dữ liệu báo cáo hiện tại để tái render khi cần
 
 $(document).ready(function () {
     const $monthSelect = $('#report-month');
@@ -22,7 +23,12 @@ $(document).ready(function () {
             const month = $monthSelect.val();
             const year = $yearInput.val();
 
-            await fetchMyFixRequests(month, year);
+            // Tải dữ liệu fix requests trước (đảm bảo có dữ liệu trước khi render table)
+            await fetchMyFixRequests(month, year).catch(() => {
+                myFixRequests = [];
+            });
+
+            // Tải báo cáo
             await fetchAndRenderReports(month, year);
 
         } catch (error) {
@@ -30,12 +36,16 @@ $(document).ready(function () {
         }
     }
 
-    $filterBtn.on('click', function () {
+    $filterBtn.on('click', async function () {
         const m = $monthSelect.val();
         const y = $yearInput.val();
 
-        fetchMyFixRequests(m, y);
-        fetchAndRenderReports(m, y);
+        // Tải fix requests trước (đảm bảo có dữ liệu)
+        await fetchMyFixRequests(m, y).catch(() => {
+            myFixRequests = [];
+        });
+
+        await fetchAndRenderReports(m, y);
     });
 
     initReportsPage();
@@ -43,26 +53,32 @@ $(document).ready(function () {
 
 //------- Call API--------
 function fetchMyFixRequests(month, year) {
-    return $.ajax({
-        url: '/fix-attendance-requests/my-requests',
-        type: 'GET',
-        data: {
-            month: month,
-            year: year
-        },
-        success: function (response) {
+    return new Promise((resolve, reject) => {
+        $.ajax({
+            url: '/fix-attendance-requests/my-requests',
+            type: 'GET',
+            data: {
+                month: month,
+                year: year
+            },
+            success: function (response) {
+                myFixRequests = response.data || [];
+                console.log("Đã cập nhật mảng myFixRequests:", myFixRequests);
 
-            myFixRequests = response.data || [];
-            console.log("Đã cập nhật mảng myFixRequests:", myFixRequests);
+                // Tái render bảng nếu có dữ liệu báo cáo (để đảm bảo action button hiển thị đúng)
+                if (currentReportsData && currentReportsData.length > 0) {
+                    renderTable(currentReportsData);
+                }
 
-        },
-        error: function (xhr) {
-            if (typeof showToast === "function") {
-                showToast("Không thể tải danh sách yêu cầu sửa công", "danger");
-            } else {
+                resolve(response);
+            },
+            error: function (xhr) {
                 console.error("Lỗi tải yêu cầu sửa công:", xhr);
+                myFixRequests = [];
+                // Không show toast ở đây - để tránh spam thông báo lỗi khi tải trang
+                reject(xhr);
             }
-        }
+        });
     });
 }
 
@@ -87,14 +103,17 @@ async function fetchAndRenderReports(month, year) {
         const result = await response.json();
 
         if (response.ok && result.status === 1000 && Array.isArray(result.data)) {
+            currentReportsData = result.data;  // Lưu dữ liệu hiện tại
             renderSummary(result.data);
             renderTable(result.data);
         } else {
+            currentReportsData = [];
             renderSummary([]);
             tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell">Không có dữ liệu cho thời gian này</td></tr>`;
         }
     } catch (error) {
         console.error('Error:', error);
+        currentReportsData = [];
         tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell" style="color: red;">Không thể kết nối máy chủ: ${error.message}</td></tr>`;
     }
 }
@@ -123,7 +142,6 @@ function submitFixRequest() {
         contentType: 'application/json',
         data: JSON.stringify(payload),
         beforeSend: function () {
-
             $('button[onclick="submitFixRequest()"]').prop('disabled', true).text('Đang gửi...');
         },
         success: async function (res) {
@@ -135,7 +153,10 @@ function submitFixRequest() {
             const month = $('#report-month').val();
             const year = $('#report-year').val();
 
-            await fetchMyFixRequests(month, year);
+            // Reload dữ liệu (đảm bảo myFixRequests được update trước khi render)
+            await fetchMyFixRequests(month, year).catch(() => {
+                myFixRequests = [];
+            });
             await fetchAndRenderReports(month, year);
         },
         error: function (xhr) {
@@ -180,10 +201,11 @@ function getFixStatus(item) {
     const requestFound = myFixRequests.find(req => req.work_date === item.work_date);
 
     const isRequested = !!requestFound;
-    const hasLack = item.lack_minutes > 0;
+    // Cho phép sửa công nếu: có thiếu, hoặc đi muộn, hoặc về sớm (mà chưa có request)
+    const hasIssue = (item.lack_minutes > 0) || (item.late_arrive_minutes > 0) || (item.leave_early_minutes > 0);
 
     return {
-        canFix: hasLack && !isRequested,
+        canFix: hasIssue && !isRequested,
         isRequested: isRequested,
         requestInfo: requestFound
     };
@@ -193,7 +215,7 @@ function renderTable(data) {
     const tbody = document.getElementById('reports-tbody');
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state-cell">Không có dữ liệu công số hàng ngày</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty-state-cell">Không có dữ liệu công số hàng ngày</td></tr>`;
         return;
     }
 
@@ -280,13 +302,19 @@ function calculateDailyWorkLog(targetDate) {
         return Promise.resolve();
     }
 
-    return $.ajax({
-        url: `/attendance/calculate-daily-report/${employeeId}`,
-        type: 'POST',
-        data: { workDate: dateToCalculate },
-        error: function (xhr) {
-            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseJSON.detail : "Lỗi kết nối";
-            console.error("Không thể tính báo cáo ngày:", errorMsg);
-        },
+    return new Promise((resolve) => {
+        $.ajax({
+            url: `/attendance/calculate-daily-report/${employeeId}`,
+            type: 'POST',
+            data: { workDate: dateToCalculate },
+            error: function (xhr) {
+                const errorMsg = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseJSON.detail : "Lỗi kết nối";
+                console.error("Không thể tính báo cáo ngày:", errorMsg);
+            },
+            complete: function () {
+                // Luôn resolve dù thành công hay thất bại
+                resolve();
+            }
+        });
     });
 }
