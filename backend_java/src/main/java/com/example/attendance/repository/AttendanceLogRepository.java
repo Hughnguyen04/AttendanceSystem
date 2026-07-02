@@ -12,4 +12,5 @@ import com.example.attendance.entity.AttendanceLog;
 public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Long> {
     List<AttendanceLog> findByEmployeeIdOrderByCheckedTimeAsc(Long employeeId);
     List<AttendanceLog> findByEmployeeIdAndLogDateOrderByCheckedTimeAsc(Long employeeId, LocalDate logDate);
+    List<AttendanceLog> findByEmployeeIdAndLogDateBetweenOrderByLogDateAscCheckedTimeAsc(Long employeeId, LocalDate startDate, LocalDate endDate);
 }

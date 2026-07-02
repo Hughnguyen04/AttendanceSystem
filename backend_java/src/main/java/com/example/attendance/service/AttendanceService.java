@@ -59,6 +59,38 @@ public class AttendanceService {
         return dailyWorkReportRepository.findByEmployeeIdAndWorkDateBetween(employeeId, startDate, endDate);
     }
 
+    // Recalculate tất cả daily_work_reports từ attendance_logs
+    public String recalculateAllReports(Long employeeId, int month, int year) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        // Lấy tất cả attendance_logs trong tháng
+        List<AttendanceLog> allLogs = attendanceLogRepository
+                .findByEmployeeIdAndLogDateBetweenOrderByLogDateAscCheckedTimeAsc(employeeId, startDate, endDate);
+
+        if (allLogs.isEmpty()) {
+            return "Không có dữ liệu chấm công";
+        }
+
+        // Nhóm theo ngày và tính toán
+        LocalDate currentDate = null;
+        int count = 0;
+
+        for (AttendanceLog log : allLogs) {
+            if (!log.getLogDate().equals(currentDate)) {
+                currentDate = log.getLogDate();
+                try {
+                    calculateDailyWorkReport(employeeId, currentDate);
+                    count++;
+                } catch (Exception e) {
+                    System.err.println("Lỗi tính toán ngày " + currentDate + ": " + e.getMessage());
+                }
+            }
+        }
+
+        return "Đã recalculate " + count + " ngày";
+    }
+
     public DailyWorkReport calculateDailyWorkReport(Long employeeId, LocalDate workDate) {
         List<AttendanceLog> logs = attendanceLogRepository.findByEmployeeIdAndLogDateOrderByCheckedTimeAsc(employeeId, workDate);
         if (logs.isEmpty()) {

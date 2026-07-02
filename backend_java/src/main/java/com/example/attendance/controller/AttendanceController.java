@@ -85,4 +85,22 @@ public class AttendanceController {
         response.put("data", reports);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/recalculate-all-reports/{employeeId}")
+    public ResponseEntity<Map<String, Object>> recalculateAllReports(@PathVariable Long employeeId,
+                                                                     @RequestParam int month,
+                                                                     @RequestParam int year) {
+        try {
+            String message = attendanceService.recalculateAllReports(employeeId, month, year);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 1000);
+            response.put("message", message);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", 1001);
+            response.put("message", "Lỗi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }
