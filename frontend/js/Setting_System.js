@@ -39,9 +39,7 @@ async function initSettingsPage() {
     }
     await loadSettings();
     const saveBtn = document.getElementById('save-settings-btn');
-    const resetBtn = document.getElementById('reset-settings-btn');
     if (saveBtn) saveBtn.addEventListener('click', saveSettings);
-    if (resetBtn) resetBtn.addEventListener('click', resetSettings);
 }
 
 async function loadSettings() {
@@ -198,13 +196,5 @@ async function saveSettings() {
         saveBtn.innerHTML = originalHTML;
         saveBtn.disabled = false;
     }
-}
-
-function resetSettings() {
-    for (const key in originalSettings) {
-        const inputElement = document.getElementById(`input-${key}`);
-        if (inputElement) inputElement.value = originalSettings[key];
-    }
-    showToast('Các thay đổi đã được hủy', 'info');
 }
 

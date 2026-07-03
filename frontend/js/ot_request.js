@@ -1,13 +1,8 @@
-$(document).ready(function () {
-    checkAuthAndGetUser();
-    loadMyOTRequests();
-
-    const userRole = JSON.parse(localStorage.getItem("user"))?.role;
-
+function showAdminTabs() {
+    const userRole = (JSON.parse(localStorage.getItem("user"))?.role || "").toString().toLowerCase();
     const adminRoles = ["admin", "hr"];
 
     if (adminRoles.includes(userRole)) {
-        // Hiển thị tab Quản lý OT
         const adminOTTab = document.getElementById("admin-ot-tab-item");
         if (adminOTTab) {
             adminOTTab.classList.remove("d-none");
@@ -18,6 +13,19 @@ $(document).ready(function () {
             adminCorrectionTab.classList.remove("d-none");
         }
     }
+}
+
+$(document).ready(function () {
+    checkAuthAndGetUser().then(() => {
+        showAdminTabs();
+        loadMyOTRequests();
+    }).catch(() => {
+        loadMyOTRequests();
+    });
+
+    window.addEventListener('user:loaded', function () {
+        showAdminTabs();
+    });
 
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         const targetId = $(e.target).attr('data-bs-target');
@@ -237,6 +245,7 @@ function createOTRequest() {
         work_date: workDate,     // YYYY-MM-DD
         start_time: startTime,   // HH:mm
         end_time: endTime,       // HH:mm
+        ot_type: otType,
         reason: reason || null   // Optional
     };
 
@@ -256,6 +265,11 @@ function createOTRequest() {
 
             // Reload danh sách ở tab "Yêu cầu của tôi"
             loadMyOTRequests();
+
+            // Nếu người dùng có quyền quản lý OT, reload danh sách admin
+            if (!$('#admin-ot-tab-item').hasClass('d-none')) {
+                loadAdminOTRequests();
+            }
         },
         error: function (xhr) {
             let errorMsg = "Không thể gửi yêu cầu";
