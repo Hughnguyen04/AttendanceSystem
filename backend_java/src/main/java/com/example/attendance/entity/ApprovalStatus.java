@@ -24,8 +24,9 @@ public enum ApprovalStatus {
         if (value == null) {
             return null;
         }
+        String normalized = value.trim().toLowerCase();
         for (ApprovalStatus status : values()) {
-            if (status.value.equalsIgnoreCase(value)) {
+            if (status.value.equals(normalized) || status.name().equalsIgnoreCase(normalized)) {
                 return status;
             }
         }

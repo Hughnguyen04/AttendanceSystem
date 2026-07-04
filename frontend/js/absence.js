@@ -1,15 +1,20 @@
 $(document).ready(function () {
     checkAuthAndGetUser();
-    const userRole = JSON.parse(localStorage.getItem("user"))?.role;
 
-    const adminRoles = ["admin", "hr"];
-
-    if (adminRoles.includes(userRole)) {
+    function applyAdminAccess() {
+        const userRole = (JSON.parse(localStorage.getItem("user") || "{}")?.role || "").toString().toLowerCase();
         const adminTab = document.getElementById("admin-ot-tab-item");
         if (adminTab) {
-            adminTab.classList.remove("d-none");
+            if (userRole === "admin" || userRole === "hr") {
+                adminTab.classList.remove("d-none");
+            } else {
+                adminTab.classList.add("d-none");
+            }
         }
     }
+
+    applyAdminAccess();
+    window.addEventListener('user:loaded', applyAdminAccess);
 
     loadMyAbsenceRequests();
 
@@ -120,7 +125,7 @@ function renderAbsenceTable(data) {
             'paternity': 'Nghỉ vợ sinh'
         };
         const typeLabel = absenceTypeMap[item.absence_type] || item.absence_type;
-        
+
         const statusBadge = getStatusBadge(item.status);
         const isPending = item.status.toUpperCase() === 'PENDING';
 
@@ -139,12 +144,12 @@ function renderAbsenceTable(data) {
                 </td>
                 <td>${statusBadge}</td>
                 <td class="text-center">
-                    ${isPending ? 
-                        `<button class="btn btn-sm btn-outline-danger" onclick="deleteAbsencePlan(${item.id})">
+                    ${isPending ?
+                `<button class="btn btn-sm btn-outline-danger" onclick="deleteAbsencePlan(${item.id})">
                             <i class="fa-solid fa-trash-can"></i>
-                        </button>` : 
-                        `<i class="fa-solid fa-lock text-muted" title="Đã xử lý"></i>`
-                    }
+                        </button>` :
+                `<i class="fa-solid fa-lock text-muted" title="Đã xử lý"></i>`
+            }
                 </td>
             </tr>
         `;
@@ -169,9 +174,9 @@ function loadAdminAbsenceRequests(page = 1) {
     $.ajax({
         url: `/absences/plans/all`,
         type: 'GET',
-        data: { 
-            page: page, 
-            limit: 10, 
+        data: {
+            page: page,
+            limit: 10,
             status: status,
             search: search ? search.trim() : undefined
         },
@@ -194,7 +199,7 @@ function loadAdminAbsenceRequests(page = 1) {
  */
 function renderAdminAbsenceTable(data) {
     const tbody = $('#admin-absence-tbody');
-    
+
     if (!data || data.length === 0) {
         tbody.html('<tr><td colspan="7" class="text-center py-4">Không có yêu cầu nào cần xử lý.</td></tr>');
         return;
@@ -202,7 +207,7 @@ function renderAdminAbsenceTable(data) {
 
     const rows = data.map(item => {
         const isPending = item.status.toUpperCase() === 'PENDING';
-        
+
         const typeMap = {
             'annual': 'Nghỉ phép năm',
             'wedding': 'Nghỉ kết hôn',
@@ -256,13 +261,15 @@ function updateAbsenceStatus(planId, newStatus) {
         url: `/absences/plans/${planId}/status`,
         type: 'PATCH',
         contentType: 'application/json',
-        data: JSON.stringify({ status: newStatus.toLowerCase() }),
-        success: function () {
+        data: JSON.stringify({ status: newStatus }),
+        success: function (response) {
             showToast(`Đã ${actionText} yêu cầu`, "success");
-            loadAdminAbsenceRequests(); // Tải lại bảng
+            loadAdminAbsenceRequests(1);
+            loadMyAbsenceRequests();
         },
         error: function (xhr) {
-            showToast("Lỗi cập nhật trạng thái", "danger");
+            const message = xhr.responseJSON?.message || "Lỗi cập nhật trạng thái";
+            showToast(message, "danger");
         }
     });
 }
