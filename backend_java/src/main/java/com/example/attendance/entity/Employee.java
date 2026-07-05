@@ -39,6 +39,9 @@ public class Employee {
     @Column(name = "shift_id")
     private Long shiftId;
 
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
     @ManyToOne
     @JoinColumn(name = "shift_id", insertable = false, updatable = false)
     private Shift shift;
@@ -59,6 +62,8 @@ public class Employee {
     public void setDob(LocalDate dob) { this.dob = dob; }
     public Long getShiftId() { return shiftId; }
     public void setShiftId(Long shiftId) { this.shiftId = shiftId; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
     public Shift getShift() { return shift; }
     public void setShift(Shift shift) { this.shift = shift; }
 }
