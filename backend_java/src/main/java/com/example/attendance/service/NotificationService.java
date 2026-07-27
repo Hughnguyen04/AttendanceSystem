@@ -48,6 +48,17 @@ public class NotificationService {
         return notifications.size();
     }
 
+    public Notification createNotification(Long employeeId, String title, String content, String notificationType) {
+        Notification notification = new Notification();
+        notification.setEmployeeId(employeeId);
+        notification.setTitle(title);
+        notification.setContent(content);
+        notification.setMessageColumn(content);
+        notification.setNotificationType(notificationType);
+        notification.setIsRead(false);
+        return notificationRepository.save(notification);
+    }
+
     private NotificationResponse toResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());

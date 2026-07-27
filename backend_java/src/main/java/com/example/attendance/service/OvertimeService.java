@@ -31,13 +31,16 @@ public class OvertimeService {
     private final OvertimeRequestRepository overtimeRequestRepository;
     private final EmployeeRepository employeeRepository;
     private final ShiftRepository shiftRepository;
+    private final NotificationService notificationService;
 
     public OvertimeService(OvertimeRequestRepository overtimeRequestRepository,
                            EmployeeRepository employeeRepository,
-                           ShiftRepository shiftRepository) {
+                           ShiftRepository shiftRepository,
+                           NotificationService notificationService) {
         this.overtimeRequestRepository = overtimeRequestRepository;
         this.employeeRepository = employeeRepository;
         this.shiftRepository = shiftRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -179,6 +182,15 @@ public class OvertimeService {
         request.setApprovedBy(adminId);
         request.setApprovedAt(java.time.LocalDateTime.now());
         request.setUpdatedAt(java.time.LocalDateTime.now());
+
+        String title = status == ApprovalStatus.APPROVED
+                ? "Đơn OT đã được duyệt"
+                : "Đơn OT bị từ chối";
+        String content = status == ApprovalStatus.APPROVED
+                ? "Đơn OT của bạn đã được phê duyệt."
+                : "Đơn OT của bạn không được phê duyệt.";
+        String type = status == ApprovalStatus.APPROVED ? "OT_APPROVED" : "OT_REJECTED";
+        notificationService.createNotification(request.getEmployeeId(), title, content, type);
 
         OvertimeRequest saved = overtimeRequestRepository.save(request);
         employeeRepository.findById(saved.getEmployeeId()).ifPresent(e -> saved.setEmployeeName(e.getFullName()));

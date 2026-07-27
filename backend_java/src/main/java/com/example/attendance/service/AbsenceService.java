@@ -32,15 +32,18 @@ public class AbsenceService {
     private final AbsencePlanRepository absencePlanRepository;
     private final AbsenceRepository absenceRepository;
     private final EmployeeRepository employeeRepository;
+    private final NotificationService notificationService;
 
     public AbsenceService(AbsenceTrackerRepository absenceTrackerRepository,
                           AbsencePlanRepository absencePlanRepository,
                           AbsenceRepository absenceRepository,
-                          EmployeeRepository employeeRepository) {
+                          EmployeeRepository employeeRepository,
+                          NotificationService notificationService) {
         this.absenceTrackerRepository = absenceTrackerRepository;
         this.absencePlanRepository = absencePlanRepository;
         this.absenceRepository = absenceRepository;
         this.employeeRepository = employeeRepository;
+        this.notificationService = notificationService;
     }
 
     public AbsenceTrackerResponse getTracker(Long employeeId) {
@@ -137,7 +140,7 @@ public class AbsenceService {
         plan.setApprovedAt(LocalDateTime.now());
         plan.setUpdatedAt(LocalDateTime.now());
 
-        if (payload.getStatus() == ApprovalStatus.APPROVED) {
+        if (newStatus == ApprovalStatus.APPROVED) {
             AbsenceTracker tracker = absenceTrackerRepository.findByEmployeeId(plan.getEmployeeId()).orElseGet(() -> {
                 AbsenceTracker newTracker = new AbsenceTracker();
                 newTracker.setEmployeeId(plan.getEmployeeId());
@@ -167,6 +170,18 @@ public class AbsenceService {
             tracker.setCurrentYearUsed(tracker.getCurrentYearUsed() + paidDays);
             absenceTrackerRepository.save(tracker);
         }
+
+        String title = newStatus == ApprovalStatus.APPROVED
+                ? "Kế hoạch nghỉ phép đã được duyệt!"
+                : "Kế hoạch nghỉ phép bị từ chối";
+        String content = newStatus == ApprovalStatus.APPROVED
+                ? "Kế hoạch nghỉ của bạn đã được chấp thuận."
+                : "Kế hoạch nghỉ của bạn không được duyệt."
+                  + (payload.getNote() != null && !payload.getNote().isBlank() ? " Lý do: " + payload.getNote() : "");
+        String type = newStatus == ApprovalStatus.APPROVED
+                ? "ABSENCE_PLAN_APPROVED"
+                : "ABSENCE_PLAN_REJECTED";
+        notificationService.createNotification(plan.getEmployeeId(), title, content, type);
 
         AbsencePlan saved = absencePlanRepository.save(plan);
         employeeRepository.findById(saved.getEmployeeId()).ifPresent(emp -> saved.setEmployeeName(emp.getFullName()));

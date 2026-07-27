@@ -1,18 +1,18 @@
 package com.example.attendance.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.attendance.dto.NotificationResponse;
@@ -66,5 +66,15 @@ class NotificationServiceTest {
         assertEquals(1, updatedCount);
         assertTrue(notification.getIsRead());
         verify(notificationRepository).saveAll(List.of(notification));
+    }
+
+    @Test
+    void createNotification_savesNotificationWithExpectedFields() {
+        Notification saved = new Notification();
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+
+        notificationService.createNotification(12L, "Đã duyệt", "Đơn của bạn đã được duyệt", "ABSENCE_PLAN_APPROVED");
+
+        verify(notificationRepository).save(any(Notification.class));
     }
 }

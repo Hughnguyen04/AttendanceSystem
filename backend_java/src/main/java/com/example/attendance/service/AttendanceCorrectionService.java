@@ -19,11 +19,14 @@ import com.example.attendance.repository.EmployeeRepository;
 public class AttendanceCorrectionService {
     private final AttendanceCorrectionRequestRepository correctionRepository;
     private final EmployeeRepository employeeRepository;
+    private final NotificationService notificationService;
 
     public AttendanceCorrectionService(AttendanceCorrectionRequestRepository correctionRepository,
-                                       EmployeeRepository employeeRepository) {
+                                       EmployeeRepository employeeRepository,
+                                       NotificationService notificationService) {
         this.correctionRepository = correctionRepository;
         this.employeeRepository = employeeRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -85,6 +88,15 @@ public class AttendanceCorrectionService {
         request.setStatus(newStatus);
         request.setApprovedBy(adminId);
         request.setApprovedAt(LocalDateTime.now());
+
+        String title = newStatus == ApprovalStatus.APPROVED
+                ? "Yêu cầu sửa công đã được duyệt"
+                : "Yêu cầu sửa công bị từ chối";
+        String content = newStatus == ApprovalStatus.APPROVED
+                ? "Yêu cầu sửa công của bạn đã được phê duyệt."
+                : "Yêu cầu sửa công của bạn không được phê duyệt.";
+        String type = newStatus == ApprovalStatus.APPROVED ? "ATTENDANCE_CORRECTION_APPROVED" : "ATTENDANCE_CORRECTION_REJECTED";
+        notificationService.createNotification(request.getEmployeeId(), title, content, type);
 
         AttendanceCorrectionRequest saved = correctionRepository.save(request);
         employeeRepository.findById(saved.getEmployeeId()).ifPresent(employee -> saved.setEmployeeName(employee.getFullName()));

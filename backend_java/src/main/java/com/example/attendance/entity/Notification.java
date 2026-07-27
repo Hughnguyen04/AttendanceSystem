@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "notifications")
@@ -23,14 +24,20 @@ public class Notification {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+    
+    @Column(name = "message", columnDefinition = "TEXT")
+    private String message;
 
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     @Column(name = "notification_type")
     private String notificationType;
+
+    @Column(name = "type")
+    private String type;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,6 +49,12 @@ public class Notification {
         }
         if (isRead == null) {
             isRead = false;
+        }
+        if (content == null || content.isBlank()) {
+            content = "";
+        }
+        if (message == null) {
+            message = content;
         }
     }
 
@@ -77,6 +90,27 @@ public class Notification {
         this.content = content;
     }
 
+    @Transient
+    public String getMessage() {
+        return message != null ? message : content;
+    }
+
+    @Transient
+    public void setMessage(String message) {
+        this.message = message;
+        if (this.content == null || this.content.isBlank()) {
+            this.content = message;
+        }
+    }
+
+    public String getMessageColumn() {
+        return message;
+    }
+
+    public void setMessageColumn(String message) {
+        this.message = message;
+    }
+
     public Boolean getIsRead() {
         return isRead;
     }
@@ -91,6 +125,14 @@ public class Notification {
 
     public void setNotificationType(String notificationType) {
         this.notificationType = notificationType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public LocalDateTime getCreatedAt() {
