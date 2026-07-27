@@ -189,10 +189,12 @@ function loadNotifications() {
             year: now.getFullYear()
         },
         success: function (res) {
-            renderNotifications(res.data);
+            const list = Array.isArray(res?.data) ? res.data : [];
+            renderNotifications(list);
         },
         error: function (err) {
             console.error(err);
+            document.getElementById("notification-list").innerHTML = '<div class="noti-empty">Không thể tải thông báo</div>';
         }
     });
 }
@@ -201,7 +203,7 @@ function loadNotifications() {
 function renderNotifications(list) {
     const container = document.getElementById("notification-list");
 
-    if (!list.length) {
+    if (!Array.isArray(list) || !list.length) {
         container.innerHTML = `<div class="noti-empty">Không có thông báo</div>`;
         return;
     }
