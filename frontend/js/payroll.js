@@ -1,8 +1,29 @@
 let currentPage = 1;
 let currentLimit = 30;
 
-$(document).ready(function () {
-    checkAuthAndGetUser();
+function getCurrentUserRole() {
+    return (JSON.parse(localStorage.getItem("user") || "{}")?.role || "").toString().toLowerCase();
+}
+
+function isAdminOrHrUser() {
+    const role = getCurrentUserRole();
+    return role === "admin" || role === "hr";
+}
+
+function showPayrollAccessDenied() {
+    $('#payroll-actions').addClass('d-none');
+    $('#payroll-access-warning').removeClass('d-none');
+    $('#payroll-tbody').html('<tr><td colspan="12" class="empty-state-cell text-danger">Bạn không có quyền truy cập chức năng này.</td></tr>');
+}
+
+$(document).ready(async function () {
+    await checkAuthAndGetUser();
+
+    if (!isAdminOrHrUser()) {
+        showPayrollAccessDenied();
+        return;
+    }
+
     loadPayrollData();
     checkPayrollPeriodStatus();
 
@@ -14,6 +35,10 @@ $(document).ready(function () {
 });
 
 function loadPayrollData() {
+    if (!isAdminOrHrUser()) {
+        showPayrollAccessDenied();
+        return;
+    }
     const payrollBody = $('#payroll-tbody');
 
     payrollBody.html('<tr><td colspan="8" class="empty-state-cell">Đang tải dữ liệu...</td></tr>');
@@ -122,6 +147,11 @@ function formatDateNoYear(dateStr) {
 }
 
 function lockPayrollPeriod() {
+    if (!isAdminOrHrUser()) {
+        showToast("Chỉ Admin/HR mới được quyền sử dụng chức năng bảng công.", "danger");
+        return;
+    }
+
     const confirmLock = confirm(
         "Sau khi khóa kỳ công sẽ không thể hoàn tác.\n\nBạn có chắc chắn muốn tiếp tục?"
     );
@@ -151,6 +181,10 @@ function lockPayrollPeriod() {
 }
 
 function checkPayrollPeriodStatus() {
+    if (!isAdminOrHrUser()) {
+        return;
+    }
+
     const month = $('#filterMonth').val() || (new Date().getMonth() + 1);
     const year = $('#filterYear').val() || new Date().getFullYear();
 
@@ -181,6 +215,11 @@ function checkPayrollPeriodStatus() {
 }
 
 async function exportExcel() {
+    if (!isAdminOrHrUser()) {
+        showToast("Chỉ Admin/HR mới được quyền sử dụng chức năng bảng công.", "danger");
+        return;
+    }
+
     const token = localStorage.getItem('access_token');
 
     try {
@@ -223,6 +262,11 @@ async function exportExcel() {
 
 /** Call API chốt công */
 function calculate_batch_payroll(btnElement) {
+    if (!isAdminOrHrUser()) {
+        showToast("Chỉ Admin/HR mới được quyền sử dụng chức năng bảng công.", "danger");
+        return;
+    }
+
     const today = new Date();
     const currentDay = today.getDate();
     const month = today.getMonth() + 1;

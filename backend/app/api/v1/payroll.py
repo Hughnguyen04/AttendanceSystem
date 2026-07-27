@@ -41,7 +41,7 @@ def get_period_control(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020),
     db: Session = Depends(get_db),
-    _ = Depends(role_required([UserRole.ADMIN.value, UserRole.HR.value, UserRole.EMPLOYEE.value]))
+    _ = Depends(role_required([UserRole.ADMIN.value, UserRole.HR.value]))
 ):
     result = payroll_service.get_timesheet_period(
         db=db,
