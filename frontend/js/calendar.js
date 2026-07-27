@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     checkAuthAndGetUser();
 
-    function isAdminUser() {
-        return (JSON.parse(localStorage.getItem('user') || 'null')?.role || '').toLowerCase() === 'admin';
+    function isAdminOrHrUser() {
+        const role = (JSON.parse(localStorage.getItem('user') || 'null')?.role || '').toLowerCase();
+        return role === 'admin' || role === 'hr';
     }
 
     const calendarEl = document.getElementById('calendar');
@@ -14,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'vi',
-        selectable: isAdminUser(),
+        selectable: isAdminOrHrUser(),
         unselectAuto: false,
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         eventClick: function (info) {
-            if (!isAdminUser()) return;
+            if (!isAdminOrHrUser()) return;
             const ev = info.event;
             if (ev.extendedProps.isCompensation) {
                 if (confirm(`Xóa ngày làm bù: ${ev.title}?`)) deleteCompensation(ev.id);
@@ -57,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     window.addEventListener('user:loaded', function () {
-        calendar.setOption('selectable', isAdminUser());
+        calendar.setOption('selectable', isAdminOrHrUser());
     });
 
     calendar.render();

@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     { text: "QL ngày nghỉ", icon: "fa-solid fa-calendar-xmark", link: "absence.html" },
     { text: "Bảng công", icon: "fa-business-time", link: "payroll.html", roles: ["admin", "hr"] },
     { text: "Thống kê", icon: "fa-chart-column", link: "statistic.html" },
-    { text: "Cài Đặt", icon: "fa-gear", link: "setting_system.html", roles: ["admin"] },
+    { text: "Cài Đặt", icon: "fa-gear", link: "setting_system.html", roles: ["admin", "hr"] },
   ];
 
   const currentPath = window.location.pathname.split("/").pop() || "index.html";
