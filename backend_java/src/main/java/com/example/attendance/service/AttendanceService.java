@@ -2,7 +2,9 @@ package com.example.attendance.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -56,6 +58,24 @@ public class AttendanceService {
     public List<DailyWorkReport> getDailyReportsByMonth(Long employeeId, int month, int year) {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<AttendanceLog> logs = attendanceLogRepository
+                .findByEmployeeIdAndLogDateBetweenOrderByLogDateAscCheckedTimeAsc(employeeId, startDate, endDate);
+
+        if (!logs.isEmpty()) {
+            Set<LocalDate> processedDates = new LinkedHashSet<>();
+            for (AttendanceLog log : logs) {
+                LocalDate logDate = log.getLogDate();
+                if (processedDates.add(logDate)) {
+                    try {
+                        calculateDailyWorkReport(employeeId, logDate);
+                    } catch (Exception e) {
+                        System.err.println("Lỗi tính toán ngày " + logDate + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+
         return dailyWorkReportRepository.findByEmployeeIdAndWorkDateBetween(employeeId, startDate, endDate);
     }
 
