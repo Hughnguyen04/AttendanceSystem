@@ -18,10 +18,10 @@ $(document).ready(function () {
     async function initReportsPage() {
         try {
             await checkAuthAndGetUser();
-            await calculateDailyWorkLog();
 
             const month = $monthSelect.val();
             const year = $yearInput.val();
+            await calculateDailyWorkLog(null, month, year);
 
             // Tải dữ liệu fix requests trước (đảm bảo có dữ liệu trước khi render table)
             await fetchMyFixRequests(month, year).catch(() => {
@@ -45,6 +45,7 @@ $(document).ready(function () {
             myFixRequests = [];
         });
 
+        await calculateDailyWorkLog(null, m, y);
         await fetchAndRenderReports(m, y);
     });
 
@@ -293,26 +294,30 @@ function openFixModal(date, currentIn, currentOut) {
     myModal.show();
 }
 
-function calculateDailyWorkLog(targetDate) {
+function calculateDailyWorkLog(targetDate, month, year) {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const employeeId = user?.id;
-    const dateToCalculate = targetDate || new Date().toISOString().split('T')[0];
 
     if (!employeeId) {
         return Promise.resolve();
     }
 
+    const selectedMonth = month || new Date().getMonth() + 1;
+    const selectedYear = year || new Date().getFullYear();
+
     return new Promise((resolve) => {
         $.ajax({
-            url: `/attendance/calculate-daily-report/${employeeId}`,
+            url: month && year ? `/attendance/recalculate-all-reports/${employeeId}` : `/attendance/calculate-daily-report/${employeeId}`,
             type: 'POST',
-            data: { workDate: dateToCalculate },
+            data: month && year ? { month: selectedMonth, year: selectedYear } : { workDate: targetDate || new Date().toISOString().split('T')[0] },
+            success: function (response) {
+                console.log("Tính báo cáo thành công:", response.message || response);
+            },
             error: function (xhr) {
                 const errorMsg = xhr.responseJSON ? xhr.responseJSON.message || xhr.responseJSON.detail : "Lỗi kết nối";
-                console.error("Không thể tính báo cáo ngày:", errorMsg);
+                console.error("Không thể tính báo cáo:", errorMsg);
             },
             complete: function () {
-                // Luôn resolve dù thành công hay thất bại
                 resolve();
             }
         });
