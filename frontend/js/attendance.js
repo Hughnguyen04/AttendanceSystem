@@ -76,8 +76,20 @@ function displayAttendanceLogs(logs) {
         return timeStr.substring(0, 5);
     };
 
+    // Sort logs by date ascending, then by checked time ascending
+    const sortedLogs = logs.slice().sort((a, b) => {
+        const dateA = new Date(a.log_date);
+        const dateB = new Date(b.log_date);
+        if (dateA < dateB) return -1;
+        if (dateA > dateB) return 1;
+
+        const timeA = a.checked_time ? a.checked_time.substring(0, 5) : "00:00";
+        const timeB = b.checked_time ? b.checked_time.substring(0, 5) : "00:00";
+        return timeA.localeCompare(timeB);
+    });
+
     // Generate HTML for table rows
-    const tableRowsHtml = logs.map(logEntry => {
+    const tableRowsHtml = sortedLogs.map(logEntry => {
         return `
             <tr>
                 <td>${logEntry.log_date}</td>

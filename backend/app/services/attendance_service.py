@@ -34,7 +34,7 @@ class AttendanceService:
             extract('day', AttendanceLog.log_date) == day,
             extract('month', AttendanceLog.log_date) == month,
             extract('year', AttendanceLog.log_date) == year
-        ).order_by(AttendanceLog.checked_time.asc()).all()
+        ).order_by(AttendanceLog.log_date.asc(), AttendanceLog.checked_time.asc()).all()
 
     def process_daily_attendance(self, db: Session, employee_id: int, work_date: date):
         working_days = calendar_service.get_working_days_list(db, work_date, work_date)
